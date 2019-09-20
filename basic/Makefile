@@ -4,7 +4,7 @@ dir := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 start:
 	docker-compose up -d
-clean:
+stop:
 	docker-compose down --remove-orphans
 
 netcfg:

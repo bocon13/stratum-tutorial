@@ -11,6 +11,14 @@ services:
       - stratum
     tty: true
     stdin_open: true
+  start_dependencies:
+    image: dadarek/wait-for-dependencies
+    depends_on:
+      - mininet
+    command: mininet:50001
+    networks:
+      - stratum
+
   p4rt-shell:
     image: p4lang/p4runtime-sh
     privileged: true
@@ -23,6 +31,8 @@ services:
       - stratum
     tty: true
     stdin_open: true
+    depends_on:
+      - start_dependencies
   onos:
     image: onosproject/onos:2.1.0
     environment:
@@ -30,12 +40,14 @@ services:
     links:
       - mininet
     networks:
-      - stratum 
+      - stratum
     ports:
       - "8101:8101"
       - "8181:8181"
     tty: true
     stdin_open: true
+    depends_on:
+      - start_dependencies
 networks:
   stratum:
     driver: "bridge"
