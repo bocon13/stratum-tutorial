@@ -2,7 +2,7 @@
   "devices": {
     "device:s1": {
       "basic": {
-        "managementAddress": "grpc://host.docker.internal:50001?device_id=1",
+        "managementAddress": "grpc://mininet:50001?device_id=1",
         "driver": "stratum-bmv2",
         "pipeconf": "org.onosproject.pipelines.basic"
       }
