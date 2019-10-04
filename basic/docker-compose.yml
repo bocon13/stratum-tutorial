@@ -1,0 +1,53 @@
+version: "3"
+services:
+  mininet:
+    image: opennetworking/mn-stratum
+    privileged: true
+    volumes:
+      - ./tmp/mn-stratum:/tmp
+    ports:
+      - "50001-50030:50001-50030"
+    networks:
+      - stratum
+    tty: true
+    stdin_open: true
+  start_dependencies:
+    image: dadarek/wait-for-dependencies
+    depends_on:
+      - mininet
+    command: mininet:50001
+    networks:
+      - stratum
+
+  p4rt-shell:
+    image: p4lang/p4runtime-sh
+    privileged: true
+    volumes:
+      - ./cfg:/tmp/cfg
+    command: --grpc-addr mininet:50001 --device-id 1 --election-id 0,1 --config /tmp/cfg/basic_p4info.txt,/tmp/cfg/basic.json
+    links:
+      - mininet
+    networks:
+      - stratum
+    tty: true
+    stdin_open: true
+    depends_on:
+      - start_dependencies
+  onos:
+    image: onosproject/onos:2.1.0
+    environment:
+      - ONOS_APPS=gui2,drivers.bmv2,pipelines.basic,lldpprovider,hostprovider,fwd
+    links:
+      - mininet
+    networks:
+      - stratum
+    ports:
+      - "8101:8101"
+      - "8181:8181"
+    tty: true
+    stdin_open: true
+    depends_on:
+      - start_dependencies
+networks:
+  stratum:
+    driver: "bridge"

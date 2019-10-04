@@ -2,7 +2,36 @@
 
 In this demo, you will start a Stratum switch using Mininet. Then, you will connect to the device using the P4Runtime shell and gNMI client. Optionally, you can also connect the device to ONOS.
 
-Each command can be run from a Unix-style shell (e.g. Bash), and the only requirement is `Docker`.
+Each command can be run from a Unix-style shell (e.g. Bash), and the requirement  are `Docker` and `Docker Compose`.
+
+
+## Operations
+We use the docker-compose to manage all services, you can use makefile or `docker-compose` command to operate containers.
+
+Please note that some of the containers are running in interactive mode, please use the **docker attach** to attach its tty and detach it by ^P^Q (hold the Ctrl, press P, press Q, release Ctrl)
+
+To start all services, run:
+```bash=
+$ make start
+```
+
+To stop all services, run:
+
+```bash=
+$ make stop
+```
+
+To attach any running container, run:
+
+```bash=
+$ docker attach basic_servicename_1
+```
+
+To execute gnmi command with paramentes, run:
+
+```bash=
+$ make ARGS="get ......" gnmi
+```
 
 ## Start Mininet
 
@@ -10,11 +39,13 @@ By default, Mininet starts a topology with a single switch and two hosts connect
 
 ![topo](single-topo.png)
 
-To start the switch, run:
+Please make sure that you already start services by docekr compose.
 
+To attach the mininet interface, run:
 ```
-$ ./start-mn.sh
+$ docker attach basic_mininet_1
 ```
+To detach the tty, using ^P^Q (hold the Ctrl, press P, press Q, release Ctrl)
 
 ## P4Runtime Shell
 
@@ -26,11 +57,13 @@ In this demo, we will use ONOS' `basic.p4` program, which has a single forwardin
 
 Note: If you start multiple switches using Mininet, we run a separate instance of Stratum for each switch. Each switch switch will have it's own gRPC server running P4Runtime, and the switch has a single forwarding "chip" (instance of bmv2). To connect to different switches, you will need to vary the gRPC address, but leave the device ID set to 1. 
 
-To start the P4Runtime shell, run the following in a separate shell:
+To attach the P4Runtime shell, run the following in a separate shell:
 
 ```
-$ ./p4rt-shell.sh
+$ docker attach basic_p4rt-shell_1
 ```
+
+To detach the tty, using ^P^Q (hold the Ctrl, press P, press Q, release Ctrl)
 
 ### Simple Forwarding
 
@@ -172,7 +205,7 @@ The gNMI CLI is a Python CLI that enables you to make gNMI call to a Stratum dev
 To list all interfaces on the device, run the following in a new shell:
 
 ```
-$ ./gnmi-cli.sh get /interfaces/interface[name=*]
+$ make ARGS="get /interface/interface[name=*]" gnmi
 ```
 
 You should see this response:
@@ -232,7 +265,6 @@ notification {
     }
   }
 }
-
 ***************************
 ```
 
@@ -243,7 +275,7 @@ You can see there are two interfaces, and the names and port numbers match the t
 Next, we can read the ingress unicast packet counters:
 
 ```
-$ ./gnmi-cli.sh --interval 1000 sub-sample /interfaces/interface[name=s1-eth1]/state/counters/in-unicast-pkts
+$ make ARGS="--interval 1000 sub-sample /interfaces/interface[name=s1-eth1]/state/counters/in-unicast-pkts" gnmi
 ```
 
 This command will print the number of packets received on port 1 every second. Here is an example of one response:
@@ -292,7 +324,7 @@ Finally, we can demonstrate gNMI set and on-change subscriptions.
 Start a subscription for the operational status of port 1:
 
 ```
-$ ./gnmi-cli.sh sub-onchange /interfaces/interface[name=s1-eth1]/state/oper-status
+$ make ARGS="sub-onchange /interfaces/interface[name=s1-eth1]/state/oper-status" gnmi
 ```
 
 You should see the following response which indicates that port 1 is `UP`:
@@ -335,7 +367,7 @@ Leave this shell open as any updates will be printed here.
 In another shell (ideally one that leaves the subscription shell visible), we will run a command to disable port 1:
 
 ```
-$ ./gnmi-cli.sh set /interfaces/interface[name=s1-eth1]/config/enabled --bool-val false
+$ make ARGS="set /interfaces/interface[name=s1-eth1]/config/enabled --bool-val false" gnmi
 ```
 
 In the subscription shell, you should see:
@@ -378,7 +410,7 @@ You should also see the ping stop in the Mininet shell.
 In the set shell, you can renable port 1:
 
 ```
-$ ./gnmi-cli.sh set /interfaces/interface[name=s1-eth1]/config/enabled --bool-val true
+$ make ARGS="set /interfaces/interface[name=s1-eth1]/config/enabled --bool-val true" gnmi
 ```
 
 You should see that the port is back `UP` in the subscribe shell and the ping should resume in the Mininet shell.
@@ -387,8 +419,12 @@ You should see that the port is back `UP` in the subscribe shell and the ping sh
 
 You can start ONOS to look at the topology using the ONOS UI:
 
+Please make sure that you already start services by docekr compose.
+
+Check the running logs of ONOS, run:
+
 ```
-$ ./start-onos.sh
+$ docker logs -f basic_onos_1
 ```
 
 ONOS will run in the foreground of this shell and will print its log.
@@ -400,7 +436,7 @@ Once you see ONOS' log has quieted down (logging slows), you will push informati
 In a separate shell, run:
 
 ```
-$ ./netcfg.sh
+$ make netcfg
 ```
 
 ### Opening the UI
